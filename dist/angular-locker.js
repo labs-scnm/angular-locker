@@ -59,6 +59,15 @@
         };
 
         /**
+         * Get the number of seconds since the epoch
+         *
+         * @return {Integer}
+         */
+        var _now  = function () {
+            return Math.floor((new Date()).getTime()/1000);
+        };
+
+        /**
          * Set the defaults
          *
          * @type {Object}
@@ -173,7 +182,7 @@
 
                     /**
                      * Out of the box drivers
-                     * 
+                     *
                      * @type {Object}
                      */
                     this._registeredDrivers = {
@@ -314,17 +323,24 @@
                      * @param {String}  key
                      * @param {Mixed}  value
                      */
-                    this._setItem = function (key, value) {
+                    this._setItem = function (key, value, ttl) {
                         if (! this._checkSupport()) _error('The browser does not support localStorage');
 
+                        ttl = ttl || false;
+
                         try {
-                            var oldVal = this._getItem(key);
-                            this._driver.setItem(this._getPrefix(key), this._serialize(value));
+
+                            var oldVal = this._getItem(key),
+                                val = { value: value, exp: ttl === false ? 0 : _now() + ttl };
+
+                            this._driver.setItem(this._getPrefix(key), this._serialize(val));
+
                             if (this._exists(key) && ! angular.equals(oldVal, value)) {
                                 this._event('locker.item.updated', { key: key, oldValue: oldVal, newValue: value });
                             } else {
                                 this._event('locker.item.added', { key: key, value: value });
                             }
+
                         } catch (e) {
                             if (['QUOTA_EXCEEDED_ERR', 'NS_ERROR_DOM_QUOTA_REACHED', 'QuotaExceededError'].indexOf(e.name) !== -1) {
                                 _error('The browser storage quota has been exceeded');
@@ -343,7 +359,17 @@
                     this._getItem = function (key) {
                         if (! this._checkSupport()) _error('The browser does not support localStorage');
 
-                        return this._unserialize(this._driver.getItem(this._getPrefix(key)));
+                        var item = this._unserialize(this._driver.getItem(this._getPrefix(key)));
+
+                        if (angular.isUndefined(item) || item === null) return void 0;
+
+                        // if the item has expired then remove it
+                        if (item.exp <= _now()) {
+                            item.value = void 0;
+                            this._removeItem(key);
+                        }
+
+                        return item.value;
                     };
 
                     /**
@@ -386,11 +412,12 @@
                     /**
                      * Add a new item to storage (even if it already exists)
                      *
-                     * @param  {Mixed}  key
-                     * @param  {Mixed}  value
+                     * @param  {Mixed}    key
+                     * @param  {Mixed}    value
+                     * @param  {Integer}  ttl
                      * @return {self}
                      */
-                    put: function (key, value) {
+                    put: function (key, value, ttl) {
                         if (! key) return false;
                         key = _value(key);
 
@@ -400,7 +427,7 @@
                             }, this);
                         } else {
                             if (! angular.isDefined(value)) return false;
-                            this._setItem(key, _value(value, this._getItem(key)));
+                            this._setItem(key, _value(value, this._getItem(key)), ttl);
                         }
 
                         return this;
@@ -409,13 +436,14 @@
                     /**
                      * Add an item to storage if it doesn't already exist
                      *
-                     * @param  {Mixed}  key
-                     * @param  {Mixed}  value
+                     * @param  {Mixed}    key
+                     * @param  {Mixed}    value
+                     * @param  {Integer}  ttl
                      * @return {Boolean}
                      */
-                    add: function (key, value) {
+                    add: function (key, value, ttl) {
                         if (! this.has(key)) {
-                            this.put(key, value);
+                            this.put(key, value, ttl);
                             return true;
                         }
 
@@ -570,7 +598,7 @@
                         this.forget(key);
 
                         var watchId = key + $scope.$id;
-                        
+
                         if (this._watchers[watchId]) {
                             // execute the de-registration function
                             this._watchers[watchId]();
