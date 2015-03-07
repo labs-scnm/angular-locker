@@ -329,9 +329,8 @@
                         ttl = ttl || false;
 
                         try {
-
                             var oldVal = this._getItem(key),
-                                val = { value: value, exp: ttl === false ? 0 : _now() + ttl };
+                                val = { v: value, e: ttl === false ? false : _now() + ttl };
 
                             this._driver.setItem(this._getPrefix(key), this._serialize(val));
 
@@ -359,17 +358,17 @@
                     this._getItem = function (key) {
                         if (! this._checkSupport()) _error('The browser does not support localStorage');
 
-                        var item = this._unserialize(this._driver.getItem(this._getPrefix(key)));
+                        var item = this._unserialize( this._driver.getItem(this._getPrefix(key)) );
 
                         if (angular.isUndefined(item) || item === null) return void 0;
 
                         // if the item has expired then remove it
-                        if (item.exp <= _now()) {
-                            item.value = void 0;
+                        if (item.e !== false && item.e < _now()) {
+                            item.v = void 0;
                             this._removeItem(key);
                         }
 
-                        return item.value;
+                        return item.v;
                     };
 
                     /**
@@ -394,6 +393,7 @@
                         if (! this._checkSupport()) _error('The browser does not support localStorage');
 
                         if (! this._exists(key)) return false;
+
                         this._driver.removeItem(this._getPrefix(key));
 
                         this._event('locker.item.forgotten', { key: key });
@@ -419,6 +419,7 @@
                      */
                     put: function (key, value, ttl) {
                         if (! key) return false;
+
                         key = _value(key);
 
                         if (angular.isObject(key)) {
@@ -509,6 +510,7 @@
                      */
                     pull: function (key, def) {
                         var value = this.get(key, def);
+
                         this.forget(key);
 
                         return value;
@@ -521,6 +523,7 @@
                      */
                     all: function () {
                         var items = {};
+
                         angular.forEach(this._driver, function (value, key) {
                             var split = key.split(this._separator);
                             if (split.length > 1 && split[0] === this._namespace) {
@@ -595,6 +598,7 @@
                      */
                     unbind: function ($scope, key) {
                         $parse(key).assign($scope, void 0);
+
                         this.forget(key);
 
                         var watchId = key + $scope.$id;

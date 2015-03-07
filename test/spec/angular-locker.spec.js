@@ -346,6 +346,26 @@ describe('angular-locker', function () {
             }));
         });
 
+        describe('adding expiring items to the locker', function () {
+
+            it('should put a value into the locker with an expiry', function (done) {
+
+                inject(function (locker) {
+                    var str = 'someVal';
+                    locker.put('someKey', str, 0.1);
+
+                    expect( locker.get('someKey') ).toEqual(str);
+
+                    setTimeout(function() {
+                        expect( locker.get('someKey') ).toBeUndefined();
+                        done();
+                    }, 400);
+
+                });
+
+            });
+        });
+
         describe('switching drivers/namespaces', function () {
 
             it('should switch drivers when chained', function () {

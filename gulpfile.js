@@ -81,7 +81,7 @@ gulp.task('test', function() {
 
 gulp.task('gitdown', function () {
     return gitdown
-        .read('.gitdown/README.md')
+        .read('.gitdown/master.md')
         .write('README.md');
 });
 
@@ -90,7 +90,7 @@ gulp.task('default', [
     'clean',
     'scripts',
     'test',
-    'gitdown'
+    // 'gitdown'
 ]);
 
 var promptBump = function(callback) {
