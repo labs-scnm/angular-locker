@@ -15,6 +15,8 @@ var gulp    = require('gulp'),
     gitdown = require('gitdown'),
     package = require('./package.json');
 
+var fizzy = require('fizzy');
+
 var paths = {
     output : 'dist/',
     vendor: [
@@ -44,30 +46,30 @@ var banner = [
     '\n'
 ].join('');
 
-gulp.task('scripts', ['clean'], function() {
-    return gulp.src(paths.scripts)
-        .pipe(plumber())
-        .pipe(gulp.dest('dist/'))
-        .pipe(rename({ suffix: '.min' }))
-        .pipe(sourcemaps.init())
-        .pipe(uglify())
-        .pipe(sourcemaps.write('./'))
-        .pipe(header(banner, { package : package }))
-        .pipe(gulp.dest('dist/'));
-});
+gulp.task('scripts', ['clean'], fizzy('scripts', {
+    src: paths.scripts,
+    dest: paths.output
+}));
 
-gulp.task('lint', function () {
-    return gulp.src(paths.scripts)
-        .pipe(plumber())
-        .pipe(jshint())
-        .pipe(jshint.reporter('jshint-stylish'));
-});
+// gulp.task('scripts', ['clean'], function() {
+//     return gulp.src(paths.scripts)
+//         .pipe(plumber())
+//         .pipe(gulp.dest('dist/'))
+//         .pipe(rename({ suffix: '.min' }))
+//         .pipe(sourcemaps.init())
+//         .pipe(uglify())
+//         .pipe(sourcemaps.write('./'))
+//         .pipe(header(banner, { package : package }))
+//         .pipe(gulp.dest('dist/'));
+// });
 
-gulp.task('clean', function () {
-    return gulp.src(paths.output, { read: false })
-        .pipe(plumber())
-        .pipe(clean());
-});
+gulp.task('lint', fizzy('lint', {
+    src: paths.scripts
+}));
+
+gulp.task('clean', fizzy('clean', {
+    src: paths.output
+}));
 
 gulp.task('test', function() {
     return gulp.src(paths.vendor.concat(paths.scripts, paths.test))
