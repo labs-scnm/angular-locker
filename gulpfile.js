@@ -48,20 +48,9 @@ var banner = [
 
 gulp.task('scripts', ['clean'], fizzy('scripts', {
     src: paths.scripts,
-    dest: paths.output
+    dest: paths.output,
+    header: [banner, { package: package }]
 }));
-
-// gulp.task('scripts', ['clean'], function() {
-//     return gulp.src(paths.scripts)
-//         .pipe(plumber())
-//         .pipe(gulp.dest('dist/'))
-//         .pipe(rename({ suffix: '.min' }))
-//         .pipe(sourcemaps.init())
-//         .pipe(uglify())
-//         .pipe(sourcemaps.write('./'))
-//         .pipe(header(banner, { package : package }))
-//         .pipe(gulp.dest('dist/'));
-// });
 
 gulp.task('lint', fizzy('lint', {
     src: paths.scripts
@@ -87,13 +76,7 @@ gulp.task('gitdown', function () {
         .write('README.md');
 });
 
-gulp.task('default', [
-    'lint',
-    'clean',
-    'scripts',
-    'test',
-    // 'gitdown'
-]);
+gulp.task('default', ['lint', 'clean', 'scripts', 'test', 'gitdown']);
 
 var promptBump = function(callback) {
 
