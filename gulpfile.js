@@ -1,18 +1,8 @@
 var gulp    = require('gulp'),
-    karma   = require('gulp-karma'),
-    jshint  = require('gulp-jshint'),
-    stylish = require('jshint-stylish'),
-    header  = require('gulp-header'),
-    uglify  = require('gulp-uglify'),
-    plumber = require('gulp-plumber'),
-    clean   = require('gulp-clean'),
-    rename  = require('gulp-rename'),
     prompt  = require('gulp-prompt'),
     semver  = require('semver'),
     streamqueue = require('streamqueue'),
     jeditor = require('gulp-json-editor'),
-    sourcemaps = require('gulp-sourcemaps'),
-    gitdown = require('gitdown'),
     package = require('./package.json');
 
 var fizzy = require('fizzy');
@@ -33,7 +23,8 @@ var paths = {
     versions: [
         './bower.json',
         './package.json'
-    ]
+    ],
+    karma: 'test/karma.conf.js'
 };
 
 var banner = [
@@ -46,12 +37,6 @@ var banner = [
     '\n'
 ].join('');
 
-gulp.task('scripts', ['clean'], fizzy('scripts', {
-    src: paths.scripts,
-    dest: paths.output,
-    header: [banner, { package: package }]
-}));
-
 gulp.task('lint', fizzy('lint', {
     src: paths.scripts
 }));
@@ -60,21 +45,21 @@ gulp.task('clean', fizzy('clean', {
     src: paths.output
 }));
 
-gulp.task('test', function() {
-    return gulp.src(paths.vendor.concat(paths.scripts, paths.test))
-        .pipe(plumber())
-        .pipe(karma({
-            configFile: 'test/karma.conf.js',
-            action: 'run'
-        }))
-        .on('error', function(err) { throw err; });
-});
+gulp.task('scripts', ['clean'], fizzy('scripts', {
+    src: paths.scripts,
+    dest: paths.output,
+    header: [banner, { package: package }]
+}));
 
-gulp.task('gitdown', function () {
-    return gitdown
-        .read('.gitdown/master.md')
-        .write('README.md');
-});
+gulp.task('test', fizzy('test', {
+    src: paths.vendor.concat(paths.scripts, paths.test),
+    karmaConfigFile: paths.karma
+}));
+
+gulp.task('gitdown', fizzy('gitdown', {
+    src: '.gitdown/master.md',
+    dest: 'README.md'
+}));
 
 gulp.task('default', ['lint', 'clean', 'scripts', 'test', 'gitdown']);
 
